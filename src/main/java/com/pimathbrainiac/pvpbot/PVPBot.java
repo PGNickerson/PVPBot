@@ -90,6 +90,7 @@ public class PVPBot extends ListenerAdapter
                     match.add("brawl");
                     match.add("" + System.currentTimeMillis());
                     match.add(nick);
+                    accepted.add(nick);
                     for(int i = 1; i < challenged.length; i++)
                     {
                         match.add(challenged[i]);
@@ -105,11 +106,11 @@ public class PVPBot extends ListenerAdapter
                 }
                 else if(challenged.length == 2)
                 {
-                    System.out.println("competitive");
                     List<String> match = new ArrayList<>();
                     match.add("competitive");
                     match.add("" + System.currentTimeMillis());
                     match.add(nick);
+                    accepted.add(nick);
                     match.add(challenged[1]);
                     msg(event, match.get(2) + " challenged " + match.get(3) + " to a competitive!");
                     msg(event, match.get(3) + ": To accept, type \"!accept\" within the next 2 minutes.");
@@ -119,6 +120,42 @@ public class PVPBot extends ListenerAdapter
                 {
                     msg(event, "Nobody challenged.");
                 }
+            }
+        }
+        if(message.equalsIgnoreCase("!accept"))
+        {
+            boolean hasMatch = false;
+            if(!accepted.contains(nick))
+            {
+                for(List<String> match : matches)
+                {
+                    if(match.contains(nick))
+                    {
+                        accepted.add(nick);
+                        hasMatch = true;
+                        msg(event, nick + ": You have accepted your challenge.");
+                        int totalAccepted = 0;
+                        for(String player : match)
+                        {
+                            if(accepted.contains(player))
+                            {
+                                totalAccepted++;
+                            }
+                        }
+                        if(totalAccepted == (match.size() - 2))
+                        {
+                            msg(event, "Match Start!");
+                        }
+                    }
+                }
+                if(!hasMatch)
+                {
+                    msg(event, nick + ": You have no matches to accept.");
+                }
+            }
+            else
+            {
+                msg(event, nick + ": You have already accepted.");
             }
         }
     }
