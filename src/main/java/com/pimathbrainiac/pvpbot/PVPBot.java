@@ -12,8 +12,9 @@ public class PVPBot extends ListenerAdapter
 {
     static RatingCalculator ratingCalculator = new RatingCalculator(0.06, 0.5);
     static List<Rating> players = new ArrayList<>();
-    static ArrayList<ArrayList<ArrayList<String>>> matches = new ArrayList<ArrayList<ArrayList<String>>>();
+    static List<List<String>> matches = new ArrayList<>();
     final static long TIMEOUT_MILLIS = 120000;
+    static List<String> accepted = new ArrayList<>();
     
     public PVPBot()
     {
@@ -30,18 +31,20 @@ public class PVPBot extends ListenerAdapter
         String message = event.getMessage();
         String nick = event.getUser().getNick();
         boolean isIrc = true;
-        boolean action = false;
-        if(nick.equals("PvPTest"))
+        boolean isAction = false;
+        boolean isMessage = false;
+        if(nick.equalsIgnoreCase("PvPTest"))
         {
             isIrc = false;
             message = message.substring(4);
             if(message.startsWith("*"))
             {
-                action = true;
+                isAction = true;
                 nick = message.substring(1, message.indexOf(' ') + 1);
             }
             else if(message.startsWith("["))
             {
+                isMessage = true;
                 nick = message.substring(1, message.indexOf(']'));
             }
             else
@@ -60,33 +63,62 @@ public class PVPBot extends ListenerAdapter
         }
         if(message.toLowerCase().startsWith("!challenge"))
         {
-            String[] challenged = message.split("\\s+");
-            if(challenged.length > 2)
+            boolean hasBusyPlayer = false;
+            if(!matches.isEmpty())
             {
-                List<String> match = new ArrayList<>();
-                match.add("brawl");
-                match.add("" + System.currentTimeMillis());
-                match.add(nick);
-                for(int i = 1; i < challenged.length; i++)
+                for(List<String> match: matches)
                 {
-                    match.add(challenged[i]);
+                    for(String player: match)
+                    {
+                        if((message.toLowerCase().contains(player.toLowerCase())) || (nick.equalsIgnoreCase(player)))
+                        {
+                            hasBusyPlayer = true;
+                        }
+                    }
                 }
-                msg(event, "Brawl Created by " + match.get(2) + " at " + match.get(1) + " with participants ");
             }
-            else if(challenged.length > 1)
+            if(hasBusyPlayer)
             {
-                List<String> match = new ArrayList<>();
-                match.add("competitive");
-                match.add("" + System.currentTimeMillis());
-                match.add(nick);
-                for(int i = 1; i < challenged.length; i++)
-                {
-                    match.add(challenged[i]);
-                }
+                msg(event, nick + ": One of the players challenged has either been challenged or is in a match.");
             }
             else
             {
-                msg(event, "Nobody challenged");
+                String[] challenged = message.split("\\s+");
+                if(challenged.length > 2)
+                {
+                    List<String> match = new ArrayList<>();
+                    match.add("brawl");
+                    match.add("" + System.currentTimeMillis());
+                    match.add(nick);
+                    for(int i = 1; i < challenged.length; i++)
+                    {
+                        match.add(challenged[i]);
+                    }
+                    msg(event, "Brawl Created by " + match.get(2) + " with participants:");
+                    for(int i = 3; i < match.size(); i++)
+                    {
+                        String participant = match.get(i);
+                        msg(event, participant);
+                    }
+                    msg(event, "To accept, type \"!accept\" within the next 2 minutes.");
+                    matches.add(match);
+                }
+                else if(challenged.length == 2)
+                {
+                    System.out.println("competitive");
+                    List<String> match = new ArrayList<>();
+                    match.add("competitive");
+                    match.add("" + System.currentTimeMillis());
+                    match.add(nick);
+                    match.add(challenged[1]);
+                    msg(event, match.get(2) + " challenged " + match.get(3) + " to a competitive!");
+                    msg(event, match.get(3) + ": To accept, type \"!accept\" within the next 2 minutes.");
+                    matches.add(match);
+                }
+                else
+                {
+                    msg(event, "Nobody challenged.");
+                }
             }
         }
     }
@@ -136,7 +168,7 @@ public class PVPBot extends ListenerAdapter
         }
     }
     
-    static boolean searchList(String searchString)
+    static boolean searchRatings(String searchString)
     {
         boolean isFound = false;
         if(!players.isEmpty())
