@@ -11,6 +11,7 @@ import org.goochjs.glicko2.*;
 public class PVPBot extends ListenerAdapter
 {
     static RatingCalculator ratingCalculator = new RatingCalculator(0.06, 0.5);
+    static RatingPeriodResults results = new RatingPeriodResults();
     static List<Rating> players = new ArrayList<>();
     static List<List<String>> matches = new ArrayList<>();
     final static long TIMEOUT_MILLIS = 120000;
@@ -41,8 +42,8 @@ public class PVPBot extends ListenerAdapter
             message = message.substring(4);
             if(message.startsWith("*"))
             {
-                isQuit = message.equalsIgnoreCase("has left the room.");
-                nick = message.substring(1, message.indexOf(' ') + 1);
+                isQuit = message.toLowerCase().contains("has left the room.");
+                nick = message.substring(1, message.indexOf(' '));
             }
             else if(message.startsWith("["))
             {
@@ -63,6 +64,10 @@ public class PVPBot extends ListenerAdapter
         {
             msg(event, ping(message.substring(6)));
         }
+        if (message.toLowerCase().startsWith("!help"))
+        {
+            msg(event, "See this topic: http://www.cemetech.net/forum/viewtopic.php?t=11415");
+        }
         if(message.toLowerCase().startsWith("!challenge"))
         {
             boolean hasBusyPlayer = false;
@@ -72,7 +77,7 @@ public class PVPBot extends ListenerAdapter
                 {
                     for(String player: match)
                     {
-                        if((message.toLowerCase().contains(player.toLowerCase())) || (nick.equalsIgnoreCase(player)))
+                        if(message.toLowerCase().contains(player.toLowerCase()) || message.toLowerCase().contains(nick.toLowerCase()))
                         {
                             hasBusyPlayer = true;
                         }
@@ -118,7 +123,7 @@ public class PVPBot extends ListenerAdapter
                     
                     if(!isInBrawlPlayers)
                     {
-                        brawlPlayers.add(new BrawlPlayer(0, nick));
+                        brawlPlayers.add(new BrawlPlayer(nick, 0));
                     }
                     
                     msg(event, "To accept, type \"!accept\" within the next 2 minutes.");
@@ -184,7 +189,7 @@ public class PVPBot extends ListenerAdapter
                             
                             if(!isInBrawlPlayers)
                             {
-                                brawlPlayers.add(new BrawlPlayer(0, nick));
+                                brawlPlayers.add(new BrawlPlayer(nick, 0));
                             }
                         }
                         
@@ -233,6 +238,20 @@ public class PVPBot extends ListenerAdapter
             else
             {
                 msg(event, nick + ": You have already accepted.");
+            }
+        }
+        if(message.equalsIgnoreCase("!deny"))
+        {
+            if(!accepted.contains(nick))
+            {
+                for(List<String> match : matches)
+                {
+                    if(match.contains(nick))
+                    {
+                        matches.remove(match);
+                        msg(event, nick + "denies the match! Match canceled!");
+                     }
+                }
             }
         }
         if(!isIrc && !isMessage && !isQuit)
@@ -284,6 +303,15 @@ public class PVPBot extends ListenerAdapter
                                     }
                                     match.remove(2);
                                     matches.remove(match);
+                                    
+                                    FileWriter writer = new FileWriter("brawls.csv", false);
+                                    for(BrawlPlayer player : brawlPlayers)
+                                    {
+                                        writer.write(player.getName() + ",");
+                                        writer.write(player.getScore() + ",");
+                                    }
+                                    writer.flush();
+                                    writer.close();
                                     break;
                                 }
                             }
@@ -293,13 +321,40 @@ public class PVPBot extends ListenerAdapter
                                 {
                                     accepted.remove(nick);
                                 }
-                                //replace this line with logic for Glicko
                                 match.remove(nick); //not this line
                                 msg(event, match.get(2) + " has won their competitive!");
-                                
                                 if(accepted.contains(match.get(2)))
                                 {
                                     accepted.remove(match.get(2));
+                                }
+                                Rating winner = null;
+                                Rating loser = null;
+                                for(Rating searched : players)
+                                {
+                                    if(searched.getUid().equalsIgnoreCase(nick))
+                                    {
+                                        winner = searched;
+                                    }
+                                    if(searched.getUid().equalsIgnoreCase(match.get(2)))
+                                    {
+                                        loser = searched;
+                                    }
+                                }
+                                if(winner != null && loser != null)
+                                {
+                                    results.addResult(winner, loser);
+                                    ratingCalculator.updateRatings(results);
+                                    System.out.println("Ratings updated");
+                                    FileWriter writer = new FileWriter("ratings.csv", false);
+                                    for(Rating player : players)
+                                    {
+                                        writer.write(player.getUid() + ",");
+                                        writer.write(player.getRating() + ",");
+                                        writer.write(player.getRatingDeviation() + ",");
+                                    }
+                                    System.out.println("csv updated");
+                                    writer.flush();
+                                    writer.close();
                                 }
                                 match.remove(2);
                                 matches.remove(match);
@@ -355,6 +410,15 @@ public class PVPBot extends ListenerAdapter
                             }
                             match.remove(2);
                             matches.remove(match);
+                            
+                            FileWriter writer = new FileWriter("brawls.csv", false);
+                            for(BrawlPlayer player : brawlPlayers)
+                            {
+                                writer.write(player.getName() + ",");
+                                writer.write(player.getScore() + ",");
+                            }
+                            writer.flush();
+                            writer.close();
                             break;
                         }
                     }
@@ -364,10 +428,35 @@ public class PVPBot extends ListenerAdapter
                         {
                             accepted.remove(nick);
                         }
-                        //replace this line with logic for Glicko
                         match.remove(nick); //not this line
                         msg(event, match.get(2) + " has won their competitive!");
-                        
+                        Rating winner = null;
+                        Rating loser = null;
+                        for(Rating searched : players)
+                        {
+                            if(searched.getUid().equalsIgnoreCase(nick))
+                            {
+                                winner = searched;
+                            }
+                            if(searched.getUid().equalsIgnoreCase(match.get(2)))
+                            {
+                                loser = searched;
+                            }
+                        }
+                        if(winner != null && loser != null)
+                        {
+                            results.addResult(winner, loser);
+                            ratingCalculator.updateRatings(results);
+                            FileWriter writer = new FileWriter("ratings.csv", false);
+                            for(Rating player : players)
+                            {
+                                writer.write(player.getUid() + ",");
+                                writer.write(player.getRating() + ",");
+                                writer.write(player.getRatingDeviation() + ",");
+                            }
+                            writer.flush();
+                            writer.close();
+                        }
                         if(accepted.contains(match.get(2)))
                         {
                             accepted.remove(match.get(2));
@@ -426,6 +515,32 @@ public class PVPBot extends ListenerAdapter
         deathStrings.add("fell from a high place and fell out of the world");
         deathStrings.add("was knocked into the void by");
         deathStrings.add("withered away");
+        File ratings = new File("ratings.csv");
+        if(!ratings.exists())
+        {
+            ratings.createNewFile();
+        }
+        Scanner sc1 = new Scanner(new File("ratings.csv"));
+        sc1.useDelimiter(",");
+        
+        while(sc1.hasNext())
+        {
+            players.add(new Rating(sc1.next(), ratingCalculator, sc1.nextDouble(), sc1.nextDouble(), 0.06));
+        }
+        
+        File brawlRatings = new File("brawls.csv");
+        if(!brawlRatings.exists())
+        {
+            brawlRatings.createNewFile();
+        }
+        
+        Scanner sc2 = new Scanner(new File("brawls.csv"));
+        sc2.useDelimiter(",");
+        
+        while(sc2.hasNext())
+        {
+            brawlPlayers.add(new BrawlPlayer(sc2.next(), sc2.nextInt()));
+        }
         Configuration configuration = new Configuration.Builder().setName("PVPBot").setLogin("pimath").setAutoNickChange(true).setCapEnabled(true).addListener(new PVPBot()).setServerHostname("irc.mzima.net").addAutoJoinChannel("#PvPBot").buildConfiguration();
         PircBotX bot = new PircBotX(configuration);
         try
@@ -491,7 +606,7 @@ class BrawlPlayer
     int score;
     String name;
     
-    public BrawlPlayer(int scoreIn, String nameIn)
+    public BrawlPlayer(String nameIn, int scoreIn)
     {
         score = scoreIn;
         name = nameIn;
