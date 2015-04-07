@@ -36,10 +36,34 @@ public class PVPBot extends ListenerAdapter
         boolean isIrc = true;
         boolean isQuit = false;
         boolean isMessage = false;
+        if(nick.equalsIgnoreCase("CemetecMC"))
+        {
+            isIrc = false;
+            message = message.substring(4);
+            System.out.println(message);
+            if(message.startsWith("*"))
+            {
+                isQuit = message.toLowerCase().contains("has left the room.");
+                nick = message.substring(4, message.indexOf(' ') - 1);
+            }
+            else if(message.charAt(1) == '[')
+            {
+                isMessage = true;
+                nick = message.substring(2, message.indexOf(']') - 1);
+                message = message.substring(message.indexOf(']') + 1);
+            }
+            else
+            {
+                nick = message.substring(0, message.indexOf(' '));
+            }
+            message = message.substring(message.indexOf(' ') + 1);
+            System.out.println(nick + "," + message);
+        }
         if(nick.equalsIgnoreCase("PvPTest"))
         {
             isIrc = false;
             message = message.substring(4);
+            System.out.println(message);
             if(message.startsWith("*"))
             {
                 isQuit = message.toLowerCase().contains("has left the room.");
@@ -55,6 +79,7 @@ public class PVPBot extends ListenerAdapter
                 nick = message.substring(0, message.indexOf(' '));
             }
             message = message.substring(message.indexOf(' ') + 1);
+            System.out.println(message);
         }
         if (message.equalsIgnoreCase(".test"))
         {
@@ -70,14 +95,14 @@ public class PVPBot extends ListenerAdapter
         }
         if(message.toLowerCase().startsWith("!challenge"))
         {
-            boolean hasBusyPlayer = false;
+            boolean hasBusyPlayer = message.toLowerCase().contains(nick.toLowerCase());
             if(!matches.isEmpty())
             {
                 for(List<String> match: matches)
                 {
                     for(String player: match)
                     {
-                        if(message.toLowerCase().contains(player.toLowerCase()) || message.toLowerCase().contains(nick.toLowerCase()))
+                        if(message.toLowerCase().contains(player.toLowerCase()))
                         {
                             hasBusyPlayer = true;
                         }
@@ -240,7 +265,7 @@ public class PVPBot extends ListenerAdapter
                 msg(event, nick + ": You have already accepted.");
             }
         }
-        if(message.equalsIgnoreCase("!deny"))
+        if(message.equalsIgnoreCase("!decline"))
         {
             if(!accepted.contains(nick))
             {
@@ -248,9 +273,16 @@ public class PVPBot extends ListenerAdapter
                 {
                     if(match.contains(nick))
                     {
+                        for(String player : match)
+                        {
+                            if(accepted.contains(player))
+                            {
+                                accepted.remove(player);
+                            }
+                        }
                         matches.remove(match);
-                        msg(event, nick + "denies the match! Match canceled!");
-                     }
+                        msg(event, nick + "denclines the match! Match canceled!");
+                    }
                 }
             }
         }
@@ -541,7 +573,7 @@ public class PVPBot extends ListenerAdapter
         {
             brawlPlayers.add(new BrawlPlayer(sc2.next(), sc2.nextInt()));
         }
-        Configuration configuration = new Configuration.Builder().setName("PVPBot").setLogin("pimath").setAutoNickChange(true).setCapEnabled(true).addListener(new PVPBot()).setServerHostname("irc.mzima.net").addAutoJoinChannel("#PvPBot").buildConfiguration();
+        Configuration configuration = new Configuration.Builder().setName("PVPBot").setLogin("PvPBot").setAutoNickChange(true).setCapEnabled(true).addListener(new PVPBot()).setServerHostname("irc.mzima.net").addAutoJoinChannel("#cemetech-mc").addAutoJoinChannel("#PvPBot").buildConfiguration();
         PircBotX bot = new PircBotX(configuration);
         try
         {
@@ -582,22 +614,6 @@ public class PVPBot extends ListenerAdapter
         {
             return "unsuccessful ping with IOException";
         }
-    }
-    
-    static boolean searchRatings(String searchString)
-    {
-        boolean isFound = false;
-        if(!players.isEmpty())
-        {
-            for(Rating player : players)
-            {
-                if (player.getUid().equalsIgnoreCase(searchString))
-                {
-                    isFound = true;
-                }
-            }
-        }
-        return isFound;
     }
 }
 
