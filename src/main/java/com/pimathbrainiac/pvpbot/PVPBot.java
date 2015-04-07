@@ -40,7 +40,6 @@ public class PVPBot extends ListenerAdapter
         {
             isIrc = false;
             message = message.substring(4);
-            System.out.println(message);
             if(message.startsWith("*"))
             {
                 isQuit = message.toLowerCase().contains("has left the room.");
@@ -57,8 +56,8 @@ public class PVPBot extends ListenerAdapter
                 nick = message.substring(0, message.indexOf(' '));
             }
             message = message.substring(message.indexOf(' ') + 1);
-            System.out.println(nick + "," + message);
         }
+        /*
         if(nick.equalsIgnoreCase("PvPTest"))
         {
             isIrc = false;
@@ -79,8 +78,8 @@ public class PVPBot extends ListenerAdapter
                 nick = message.substring(0, message.indexOf(' '));
             }
             message = message.substring(message.indexOf(' ') + 1);
-            System.out.println(message);
         }
+        */
         if (message.equalsIgnoreCase(".test"))
         {
             msg(event, "test received");
