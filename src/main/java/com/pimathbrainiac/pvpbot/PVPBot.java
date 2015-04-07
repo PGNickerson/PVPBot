@@ -92,6 +92,14 @@ public class PVPBot extends ListenerAdapter
         {
             msg(event, "See this topic: http://www.cemetech.net/forum/viewtopic.php?t=11415");
         }
+        if (message.toLowerCase().startsWith("!rankings"))
+        {
+            msg(event, "http://pimathbrainiac.codewalr.us/rankings.php");
+        }
+        if (message.toLowerCase().startsWith("!brawlscores"))
+        {
+            msg(event, "http://pimathbrainiac.codewalr.us/brawls.php");
+        }
         if(message.toLowerCase().startsWith("!challenge"))
         {
             boolean hasBusyPlayer = message.toLowerCase().contains(nick.toLowerCase());
@@ -364,11 +372,11 @@ public class PVPBot extends ListenerAdapter
                                 {
                                     if(searched.getUid().equalsIgnoreCase(nick))
                                     {
-                                        winner = searched;
+                                        loser = searched;
                                     }
                                     if(searched.getUid().equalsIgnoreCase(match.get(2)))
                                     {
-                                        loser = searched;
+                                        winner = searched;
                                     }
                                 }
                                 if(winner != null && loser != null)
@@ -376,6 +384,14 @@ public class PVPBot extends ListenerAdapter
                                     results.addResult(winner, loser);
                                     ratingCalculator.updateRatings(results);
                                     System.out.println("Ratings updated");
+                                    Collections.sort(players, new Comparator<Rating>()
+                                    {
+                                        @Override
+                                        public int compare(Rating s1, Rating s2)
+                                        {
+                                            return new Double(s1.getRating()).compareTo(s2.getRating());
+                                        }
+                                    });
                                     FileWriter writer = new FileWriter("ratings.csv", false);
                                     for(Rating player : players)
                                     {
@@ -467,17 +483,25 @@ public class PVPBot extends ListenerAdapter
                         {
                             if(searched.getUid().equalsIgnoreCase(nick))
                             {
-                                winner = searched;
+                                loser = searched;
                             }
                             if(searched.getUid().equalsIgnoreCase(match.get(2)))
                             {
-                                loser = searched;
+                                winner = searched;
                             }
                         }
                         if(winner != null && loser != null)
                         {
                             results.addResult(winner, loser);
                             ratingCalculator.updateRatings(results);
+                            Collections.sort(players, new Comparator<Rating>()
+                            {
+                                @Override
+                                public int compare(Rating s1, Rating s2)
+                                {
+                                    return new Double(s1.getRating()).compareTo(s2.getRating());
+                                }
+                            });
                             FileWriter writer = new FileWriter("ratings.csv", false);
                             for(Rating player : players)
                             {
