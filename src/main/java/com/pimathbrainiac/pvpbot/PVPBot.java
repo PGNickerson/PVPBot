@@ -389,7 +389,7 @@ public class PVPBot extends ListenerAdapter
                                         @Override
                                         public int compare(Rating s1, Rating s2)
                                         {
-                                            return new Double(s1.getRating()).compareTo(s2.getRating());
+                                            return new Double(s2.getRating()).compareTo(s1.getRating());
                                         }
                                     });
                                     FileWriter writer = new FileWriter("ratings.csv", false);
